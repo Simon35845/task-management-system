@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -32,7 +33,7 @@ public class GlobalExceptionHandler {
             IllegalStateException.class
     })
     public ResponseEntity<ErrorResponseDto> handleBadRequest(Exception e){
-        log.error("Handle badRequest", e);
+        log.error("Handle bad request", e);
 
         ErrorResponseDto errorDto = new ErrorResponseDto(
                 "Bad request",
@@ -41,6 +42,20 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
+                .body(errorDto);
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ErrorResponseDto> handleEntityNotFound(NoSuchElementException e) {
+        log.error("Handle entity not found", e);
+
+        ErrorResponseDto errorDto = new ErrorResponseDto(
+                "Entity not found",
+                e.getMessage(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
                 .body(errorDto);
     }
 }

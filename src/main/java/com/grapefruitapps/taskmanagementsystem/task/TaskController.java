@@ -9,9 +9,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-//TODO добавить обработку PUT, DELETE запросов
-//TODO реализовать валидацию входных данных
-
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
@@ -23,7 +20,7 @@ public class TaskController {
     }
 
     @GetMapping()
-    public ResponseEntity< List<TaskDto>> getAllTasks() {
+    public ResponseEntity<List<TaskDto>> getAllTasks() {
         log.info("Called getAllTasks");
         return ResponseEntity.ok(taskService.getAllTasks());
     }
@@ -37,11 +34,40 @@ public class TaskController {
     }
 
     @PostMapping
-    public ResponseEntity< TaskDto> createTask(
+    public ResponseEntity<TaskDto> createTask(
             @RequestBody TaskDto taskDto
-    ){
+    ) {
         log.info("Called createTask");
         return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(taskService.createTask(taskDto));
+                .body(taskService.createTask(taskDto));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TaskDto> updateTask(
+            @PathVariable Long id,
+            @RequestBody TaskDto taskDto
+    ) {
+        log.info("Called updateTask: id={}, task={}", id, taskDto);
+        TaskDto updatedTask = taskService.updateTask(id, taskDto);
+        return ResponseEntity.ok(updatedTask);
+    }
+
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTask(
+            @PathVariable Long id
+    ) {
+        log.info("Called deleteTask");
+        taskService.deleteTask(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<TaskDto> changeTaskStatus(
+            @PathVariable Long id,
+            @RequestParam TaskStatus status){
+        log.info("Called changeTaskStatus: id={}, task={}", id, status);
+        TaskDto updatedTask = taskService.changeTaskStatus(id, status);
+        return ResponseEntity.ok(updatedTask);
     }
 }
