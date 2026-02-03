@@ -5,40 +5,19 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 //TODO реализовать взаимодействие с БД через объект Repository
 
 @Service
 public class TaskService {
     //TODO убрать мапу-заглушку
-    private final Map<Long, TaskDto> taskMap = new TreeMap<>();
+    private final Map<Long, TaskDto> taskMap;
+    private final AtomicLong idCounter;
 
-    {
-        taskMap.put(1L,
-                new TaskDto(1L, 2L, 12L,
-                        TaskStatus.CREATED,
-                        LocalDateTime.now(),
-                        LocalDate.now().plusDays(50),
-                        TaskPriority.HIGH));
-
-        taskMap.put(2L,
-                new TaskDto(2L, 4L, 12L,
-                        TaskStatus.IN_PROGRESS,
-                        LocalDateTime.now().minusDays(12),
-                        LocalDate.now().plusDays(40),
-                        TaskPriority.MEDIUM));
-        taskMap.put(3L,
-                new TaskDto(3L, 1L, 2L,
-                        TaskStatus.IN_PROGRESS,
-                        LocalDateTime.now().minusDays(11),
-                        LocalDate.now().plusDays(32),
-                        TaskPriority.LOW));
-        taskMap.put(4L,
-                new TaskDto(4L, 2L, 5L,
-                        TaskStatus.DONE,
-                        LocalDateTime.now().minusDays(26),
-                        LocalDate.now().minusDays(6),
-                        TaskPriority.HIGH));
+    public TaskService() {
+        taskMap = new HashMap<>();
+        idCounter = new AtomicLong();
     }
 
     public List<TaskDto> getAllTasks() {
@@ -52,4 +31,43 @@ public class TaskService {
         return taskMap.get(id);
     }
 
+    public TaskDto createTask(TaskDto taskToCreate) {
+        if (taskToCreate.getId() != null) {
+            throw new IllegalArgumentException("Task id must be empty");
+        }
+        if (taskToCreate.getCreatorId() == null) {
+            throw new IllegalArgumentException("Task creator must exist");
+        }
+        if (taskToCreate.getAssignedUserId() == null) {
+            throw new IllegalArgumentException("Task executor must exist");
+        }
+        if (taskToCreate.getStatus() != null) {
+            throw new IllegalArgumentException("Task status must be empty");
+        }
+        if (taskToCreate.getCreateDateTime() != null) {
+            throw new IllegalArgumentException("Task creation date and time must be empty");
+        }
+        if (taskToCreate.getDeadlineDate() == null) {
+            throw new IllegalArgumentException("Task deadline date must be specified");
+        }
+        if (taskToCreate.getDeadlineDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Task deadline date must be after task creation date");
+        }
+        TaskPriority priority = taskToCreate.getPriority() != null
+                ? taskToCreate.getPriority()
+                : TaskPriority.MEDIUM;
+
+        TaskDto newTask = new TaskDto(
+                idCounter.incrementAndGet(),
+                taskToCreate.getCreatorId(),
+                taskToCreate.getAssignedUserId(),
+                TaskStatus.CREATED,
+                LocalDateTime.now(),
+                taskToCreate.getDeadlineDate(),
+                priority
+        );
+
+        taskMap.put(newTask.getId(), newTask);
+        return newTask;
+    }
 }

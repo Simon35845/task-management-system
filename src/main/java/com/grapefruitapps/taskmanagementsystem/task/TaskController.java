@@ -3,15 +3,13 @@ package com.grapefruitapps.taskmanagementsystem.task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-//TODO добавить обработку POST, PUT, DELETE запросов
-//TODO реализовать перехватывание исключений
+//TODO добавить обработку PUT, DELETE запросов
 //TODO реализовать валидацию входных данных
 
 @RestController
@@ -25,16 +23,25 @@ public class TaskController {
     }
 
     @GetMapping()
-    public List<TaskDto> getAllTasks() {
+    public ResponseEntity< List<TaskDto>> getAllTasks() {
         log.info("Called getAllTasks");
-        return taskService.getAllTasks();
+        return ResponseEntity.ok(taskService.getAllTasks());
     }
 
     @GetMapping("/{id}")
-    public TaskDto getTaskById(
+    public ResponseEntity<TaskDto> getTaskById(
             @PathVariable Long id
     ) {
         log.info("Called getTaskById: id={}", id);
-        return taskService.getTaskById(id);
+        return ResponseEntity.ok(taskService.getTaskById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity< TaskDto> createTask(
+            @RequestBody TaskDto taskDto
+    ){
+        log.info("Called createTask");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                        .body(taskService.createTask(taskDto));
     }
 }

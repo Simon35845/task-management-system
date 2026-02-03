@@ -12,10 +12,6 @@ public class TaskDto {
     private LocalDateTime createDateTime;
     private LocalDate deadlineDate;
     private TaskPriority priority;
-
-    public TaskDto() {
-    }
-
     public TaskDto(Long id,
                    Long creatorId,
                    Long assignedUserId,
