@@ -1,104 +1,147 @@
 package com.grapefruitapps.taskmanagementsystem.task;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-
-//TODO реализовать взаимодействие с БД через объект Repository
 
 @Service
 public class TaskService {
-    //TODO убрать мапу-заглушку
-    private final Map<Long, TaskDto> taskMap;
-    private final AtomicLong idCounter;
+    public static final int MAX_COUNT_OF_TASKS_IN_PROGRESS = 5;
 
-    public TaskService() {
-        taskMap = new HashMap<>();
-        idCounter = new AtomicLong();
+    private final TaskRepository repository;
+    private final TaskMapper mapper;
+
+    public TaskService(TaskRepository repository, TaskMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
     }
 
     public List<TaskDto> getAllTasks() {
-        return taskMap.values().stream().toList();
+        List<TaskEntity> taskEntities = repository.findAll();
+        return taskEntities.stream().map(mapper::toDto).toList();
     }
 
     public TaskDto getTaskById(Long id) {
-        if (!taskMap.containsKey(id)) {
-            throw new NoSuchElementException("Not found task by id = " + id);
-        }
-        return taskMap.get(id);
+        TaskEntity taskEntity = repository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("Not found task by id = " + id));
+        return mapper.toDto(taskEntity);
     }
 
-    public TaskDto createTask(TaskDto taskToCreate) {
-        validation(taskToCreate);
-        if (taskToCreate.getDeadlineDate().isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("Task deadline date must be after task creation date");
+    public TaskDto createTask(TaskDto taskDto) {
+        validation(taskDto);
+
+        if (taskDto.getDeadlineDate() != null &&
+                taskDto.getDeadlineDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Task deadline date must be after task creation date: "
+                    + LocalDate.now());
         }
 
-        TaskPriority priority = taskToCreate.getPriority() != null
-                ? taskToCreate.getPriority()
-                : TaskPriority.MEDIUM;
+        TaskEntity entityToSave = mapper.toEntity(taskDto);
+        entityToSave.setStatus(TaskStatus.CREATED);
+        entityToSave.setCreateDateTime(LocalDateTime.now());
 
-        TaskDto newTask = new TaskDto(
-                idCounter.incrementAndGet(),
-                taskToCreate.getCreatorId(),
-                taskToCreate.getAssignedUserId(),
-                TaskStatus.CREATED,
-                LocalDateTime.now(),
-                taskToCreate.getDeadlineDate(),
-                priority
-        );
+        if (entityToSave.getPriority() == null) {
+            entityToSave.setPriority(TaskPriority.MEDIUM);
+        }
 
-        taskMap.put(newTask.getId(), newTask);
-        return newTask;
+        TaskEntity savedEntity = repository.save(entityToSave);
+        return mapper.toDto(savedEntity);
     }
 
-    public TaskDto updateTask(Long id, TaskDto taskToUpdate) {
-        if (!taskMap.containsKey(id)) {
-            throw new NoSuchElementException("Not found task by id = " + id);
-        }
-        validation(taskToUpdate);
+    public TaskDto updateTask(Long id, TaskDto taskDto) {
+        validation(taskDto);
 
-        TaskDto updatedTask = taskMap.get(id);
-        if (updatedTask.getStatus() == TaskStatus.DONE) {
-            throw new IllegalStateException("Cannot modify task: status = " + updatedTask.getStatus());
-        }
+        TaskEntity fetchedEntity = repository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("Not found task by id = " + id));
 
-        if (taskToUpdate.getDeadlineDate().isBefore(updatedTask.getCreateDateTime().toLocalDate())) {
-            throw new IllegalArgumentException("Task deadline date must be after task creation date");
+        if (fetchedEntity.getStatus() == TaskStatus.DONE) {
+            throw new IllegalStateException("Cannot modify task: status = " + fetchedEntity.getStatus());
         }
 
-        updatedTask.setCreatorId(taskToUpdate.getCreatorId());
-        updatedTask.setAssignedUserId(taskToUpdate.getAssignedUserId());
-        updatedTask.setDeadlineDate(taskToUpdate.getDeadlineDate());
-
-        if (taskToUpdate.getPriority() != null) {
-            updatedTask.setPriority(taskToUpdate.getPriority());
+        if (fetchedEntity.getStatus() == TaskStatus.IN_PROGRESS &&
+                taskDto.getAssignedUserId() == null) {
+            throw new IllegalStateException("Task with status: "
+                    + fetchedEntity.getStatus() + " must have an executor");
         }
 
-        taskMap.put(id, updatedTask);
-        return updatedTask;
+        if (taskDto.getDeadlineDate() != null &&
+                taskDto.getDeadlineDate().isBefore(fetchedEntity.getCreateDateTime().toLocalDate())) {
+            throw new IllegalArgumentException("Task deadline date must be after task creation date: "
+                    + fetchedEntity.getCreateDateTime().toLocalDate());
+        }
+
+        TaskEntity entityToUpdate = mapper.toEntity(taskDto);
+        entityToUpdate.setId(fetchedEntity.getId());
+        entityToUpdate.setStatus(fetchedEntity.getStatus());
+        entityToUpdate.setCreateDateTime(fetchedEntity.getCreateDateTime());
+
+        if (entityToUpdate.getPriority() == null) {
+            entityToUpdate.setPriority(fetchedEntity.getPriority());
+        }
+
+        TaskEntity updatedEntity = repository.save(entityToUpdate);
+        return mapper.toDto(updatedEntity);
     }
 
 
     public void deleteTask(Long id) {
-        if (!taskMap.containsKey(id)) {
-            throw new NoSuchElementException("Not found task by id = " + id);
+        if (!repository.existsById(id)) {
+            throw new EntityNotFoundException("Not found task by id = " + id);
         }
-        taskMap.remove(id);
+        repository.deleteById(id);
     }
 
-    public TaskDto changeTaskStatus(Long id, TaskStatus status) {
-        if (!taskMap.containsKey(id)) {
-            throw new NoSuchElementException("Not found task by id = " + id);
+    public TaskDto startTask(Long id) {
+        TaskEntity fetchedEntity = repository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("Not found task by id = " + id));
+
+        if (fetchedEntity.getStatus() != TaskStatus.CREATED) {
+            throw new IllegalStateException("Cannot start task: status = " + fetchedEntity.getStatus());
         }
-        TaskDto updatedTask = taskMap.get(id);
-        updatedTask.setStatus(status);
-        taskMap.put(id, updatedTask);
-        return updatedTask;
+
+        if (fetchedEntity.getAssignedUserId() == null) {
+            throw new IllegalStateException("Task must have an executor");
+        }
+
+        if (getTasksByStatus(TaskStatus.IN_PROGRESS).size() > MAX_COUNT_OF_TASKS_IN_PROGRESS) {
+            throw new IllegalStateException("Count of tasks with status = " + fetchedEntity.getStatus()
+                    + " must be less than " + MAX_COUNT_OF_TASKS_IN_PROGRESS);
+        }
+
+        repository.setStatus(id, TaskStatus.IN_PROGRESS);
+        fetchedEntity.setStatus(TaskStatus.IN_PROGRESS);
+        return mapper.toDto(fetchedEntity);
     }
+
+    public TaskDto approveTask(Long id) {
+        TaskEntity fetchedEntity = repository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("Not found task by id = " + id));
+
+        if (fetchedEntity.getStatus() != TaskStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Cannot approve task: status = " + fetchedEntity.getStatus());
+        }
+
+        repository.setStatus(id, TaskStatus.DONE);
+        fetchedEntity.setStatus(TaskStatus.DONE);
+        return mapper.toDto(fetchedEntity);
+    }
+
+    public TaskDto resumeTask(Long id) {
+        TaskEntity fetchedEntity = repository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("Not found task by id = " + id));
+
+        if (fetchedEntity.getStatus() != TaskStatus.DONE) {
+            throw new IllegalStateException("Cannot resume task: status = " + fetchedEntity.getStatus());
+        }
+
+        repository.setStatus(id, TaskStatus.IN_PROGRESS);
+        fetchedEntity.setStatus(TaskStatus.IN_PROGRESS);
+        return mapper.toDto(fetchedEntity);
+    }
+
 
     private void validation(TaskDto taskDto) {
         if (taskDto.getId() != null) {
@@ -107,17 +150,15 @@ public class TaskService {
         if (taskDto.getCreatorId() == null) {
             throw new IllegalArgumentException("Task creator must exist");
         }
-        if (taskDto.getAssignedUserId() == null) {
-            throw new IllegalArgumentException("Task executor must exist");
-        }
         if (taskDto.getStatus() != null) {
             throw new IllegalArgumentException("Task status must be empty");
         }
         if (taskDto.getCreateDateTime() != null) {
             throw new IllegalArgumentException("Task creation date and time must be empty");
         }
-        if (taskDto.getDeadlineDate() == null) {
-            throw new IllegalArgumentException("Task deadline date must be specified");
-        }
+    }
+
+    private List<TaskEntity> getTasksByStatus(TaskStatus status) {
+        return repository.findByStatus(status);
     }
 }

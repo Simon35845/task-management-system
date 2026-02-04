@@ -19,6 +19,7 @@ public class TaskController {
         this.taskService = taskService;
     }
 
+    //TODO сделать пагинацию и фильтрацию списка задач
     @GetMapping()
     public ResponseEntity<List<TaskDto>> getAllTasks() {
         log.info("Called getAllTasks");
@@ -38,8 +39,9 @@ public class TaskController {
             @RequestBody TaskDto taskDto
     ) {
         log.info("Called createTask");
+        TaskDto createdTask = taskService.createTask(taskDto);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(taskService.createTask(taskDto));
+                .body(createdTask);
     }
 
     @PutMapping("/{id}")
@@ -57,17 +59,35 @@ public class TaskController {
     public ResponseEntity<Void> deleteTask(
             @PathVariable Long id
     ) {
-        log.info("Called deleteTask");
+        log.info("Called deleteTask: id={}", id);
         taskService.deleteTask(id);
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<TaskDto> changeTaskStatus(
-            @PathVariable Long id,
-            @RequestParam TaskStatus status){
-        log.info("Called changeTaskStatus: id={}, task={}", id, status);
-        TaskDto updatedTask = taskService.changeTaskStatus(id, status);
-        return ResponseEntity.ok(updatedTask);
+    @PatchMapping("/{id}/start")
+    public ResponseEntity<TaskDto> startTask(
+            @PathVariable Long id
+    ){
+        log.info("Called startTask: id={}", id);
+        TaskDto startedTask = taskService.startTask(id);
+        return ResponseEntity.ok(startedTask);
+    }
+
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<TaskDto> approveTask(
+            @PathVariable Long id
+    ){
+        log.info("Called approveTask: id={}", id);
+        TaskDto approvedTask = taskService.approveTask(id);
+        return ResponseEntity.ok(approvedTask);
+    }
+
+    @PatchMapping("/{id}/resume")
+    public ResponseEntity<TaskDto> resumeTask(
+            @PathVariable Long id
+    ){
+        log.info("Called resumeTask: id={}", id);
+        TaskDto resumedTask = taskService.resumeTask(id);
+        return ResponseEntity.ok(resumedTask);
     }
 }
