@@ -1,5 +1,6 @@
 package com.grapefruitapps.taskmanagementsystem.web;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -45,8 +46,8 @@ public class GlobalExceptionHandler {
                 .body(errorDto);
     }
 
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<ErrorResponseDto> handleEntityNotFound(NoSuchElementException e) {
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleEntityNotFound(EntityNotFoundException e) {
         log.error("Handle entity not found", e);
 
         ErrorResponseDto errorDto = new ErrorResponseDto(
