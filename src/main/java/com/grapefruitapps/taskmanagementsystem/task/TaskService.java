@@ -1,6 +1,8 @@
 package com.grapefruitapps.taskmanagementsystem.task;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -10,6 +12,7 @@ import java.util.List;
 @Service
 public class TaskService {
     public static final int MAX_COUNT_OF_TASKS_IN_PROGRESS = 5;
+    private static final Logger log = LoggerFactory.getLogger(TaskService.class);
 
     private final TaskRepository repository;
     private final TaskMapper mapper;
@@ -20,17 +23,21 @@ public class TaskService {
     }
 
     public List<TaskDto> getAllTasks() {
+        log.debug("Get all tasks");
         List<TaskEntity> taskEntities = repository.findAll();
+        log.debug("Found {} tasks ", taskEntities.size());
         return taskEntities.stream().map(mapper::toDto).toList();
     }
 
     public TaskDto getTaskById(Long id) {
-        TaskEntity taskEntity = repository.findById(id).orElseThrow(
-                () -> new EntityNotFoundException("Not found task by id = " + id));
-        return mapper.toDto(taskEntity);
+        log.debug("Get task by id: {}", id);
+        TaskEntity fetchedEntity = fetchEntityById(id);
+        log.debug("Found task with id: {}", id);
+        return mapper.toDto(fetchedEntity);
     }
 
     public TaskDto createTask(TaskDto taskDto) {
+        log.info("Create new task with id: {}", taskDto.getId());
         validation(taskDto);
 
         if (taskDto.getDeadlineDate() != null &&
@@ -48,14 +55,14 @@ public class TaskService {
         }
 
         TaskEntity savedEntity = repository.save(entityToSave);
+        log.info("Task created successfully, id: {}", savedEntity.getId());
         return mapper.toDto(savedEntity);
     }
 
     public TaskDto updateTask(Long id, TaskDto taskDto) {
+        log.info("Update task with id: {}", taskDto.getId());
         validation(taskDto);
-
-        TaskEntity fetchedEntity = repository.findById(id).orElseThrow(
-                () -> new EntityNotFoundException("Not found task by id = " + id));
+        TaskEntity fetchedEntity = fetchEntityById(id);
 
         if (fetchedEntity.getStatus() == TaskStatus.DONE) {
             throw new IllegalStateException("Cannot modify task: status = " + fetchedEntity.getStatus());
@@ -83,20 +90,23 @@ public class TaskService {
         }
 
         TaskEntity updatedEntity = repository.save(entityToUpdate);
+        log.info("Task updated successfully, id: {}", updatedEntity.getId());
         return mapper.toDto(updatedEntity);
     }
 
-
     public void deleteTask(Long id) {
+        log.info("Delete task with id: {}", id);
         if (!repository.existsById(id)) {
+            log.warn("Task with id {} not found in database", id);
             throw new EntityNotFoundException("Not found task by id = " + id);
         }
         repository.deleteById(id);
+        log.info("Task deleted, id: {}", id);
     }
 
     public TaskDto startTask(Long id) {
-        TaskEntity fetchedEntity = repository.findById(id).orElseThrow(
-                () -> new EntityNotFoundException("Not found task by id = " + id));
+        log.info("Start task with id: {}", id);
+        TaskEntity fetchedEntity = fetchEntityById(id);
 
         if (fetchedEntity.getStatus() != TaskStatus.CREATED) {
             throw new IllegalStateException("Cannot start task: status = " + fetchedEntity.getStatus());
@@ -113,12 +123,13 @@ public class TaskService {
 
         repository.setStatus(id, TaskStatus.IN_PROGRESS);
         fetchedEntity.setStatus(TaskStatus.IN_PROGRESS);
+        log.info("Task started, id: {}", id);
         return mapper.toDto(fetchedEntity);
     }
 
     public TaskDto approveTask(Long id) {
-        TaskEntity fetchedEntity = repository.findById(id).orElseThrow(
-                () -> new EntityNotFoundException("Not found task by id = " + id));
+        log.info("Approve task with id: {}", id);
+        TaskEntity fetchedEntity = fetchEntityById(id);
 
         if (fetchedEntity.getStatus() != TaskStatus.IN_PROGRESS) {
             throw new IllegalStateException("Cannot approve task: status = " + fetchedEntity.getStatus());
@@ -126,12 +137,13 @@ public class TaskService {
 
         repository.setStatus(id, TaskStatus.DONE);
         fetchedEntity.setStatus(TaskStatus.DONE);
+        log.info("Task approved, id: {}", id);
         return mapper.toDto(fetchedEntity);
     }
 
     public TaskDto resumeTask(Long id) {
-        TaskEntity fetchedEntity = repository.findById(id).orElseThrow(
-                () -> new EntityNotFoundException("Not found task by id = " + id));
+        log.info("Resume task with id: {}", id);
+        TaskEntity fetchedEntity = fetchEntityById(id);
 
         if (fetchedEntity.getStatus() != TaskStatus.DONE) {
             throw new IllegalStateException("Cannot resume task: status = " + fetchedEntity.getStatus());
@@ -139,11 +151,21 @@ public class TaskService {
 
         repository.setStatus(id, TaskStatus.IN_PROGRESS);
         fetchedEntity.setStatus(TaskStatus.IN_PROGRESS);
+        log.info("Task resumed, id: {}", id);
         return mapper.toDto(fetchedEntity);
     }
 
+    private TaskEntity fetchEntityById(Long id) {
+        log.debug("Fetch task entity by id: {}", id);
+        return repository.findById(id).orElseThrow(
+                () -> {
+                    log.warn("Task with id {} not found in database", id);
+                    return new EntityNotFoundException("Not found task by id = " + id);
+                });
+    }
 
     private void validation(TaskDto taskDto) {
+        log.debug("Validate task DTO with id: {}", taskDto.getId());
         if (taskDto.getId() != null) {
             throw new IllegalArgumentException("Task id must be empty");
         }
@@ -156,9 +178,11 @@ public class TaskService {
         if (taskDto.getCreateDateTime() != null) {
             throw new IllegalArgumentException("Task creation date and time must be empty");
         }
+        log.debug("Task DTO validation passed, id: {}", taskDto.getId());
     }
 
     private List<TaskEntity> getTasksByStatus(TaskStatus status) {
+        log.debug("Get tasks with status: {}", status);
         return repository.findByStatus(status);
     }
 }
