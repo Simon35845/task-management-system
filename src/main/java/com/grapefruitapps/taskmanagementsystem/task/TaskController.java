@@ -1,6 +1,7 @@
 package com.grapefruitapps.taskmanagementsystem.task;
 
 
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,7 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<TaskDto> createTask(
-            @RequestBody TaskDto taskDto
+            @RequestBody @Valid TaskDto taskDto
     ) {
         log.info("Called createTask");
         TaskDto createdTask = taskService.createTask(taskDto);
@@ -47,7 +48,7 @@ public class TaskController {
     @PutMapping("/{id}")
     public ResponseEntity<TaskDto> updateTask(
             @PathVariable Long id,
-            @RequestBody TaskDto taskDto
+            @RequestBody @Valid TaskDto taskDto
     ) {
         log.info("Called updateTask: id={}, task={}", id, taskDto);
         TaskDto updatedTask = taskService.updateTask(id, taskDto);

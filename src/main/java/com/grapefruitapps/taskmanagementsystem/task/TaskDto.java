@@ -1,15 +1,24 @@
 package com.grapefruitapps.taskmanagementsystem.task;
 
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class TaskDto {
+    @Null
     private Long id;
+    @NotNull
     private Long creatorId;
     private Long assignedUserId;
+    @Null
     private TaskStatus status;
+    @Null
     private LocalDateTime createDateTime;
+    @FutureOrPresent
     private LocalDate deadlineDate;
     private TaskPriority priority;
     public TaskDto(Long id,
