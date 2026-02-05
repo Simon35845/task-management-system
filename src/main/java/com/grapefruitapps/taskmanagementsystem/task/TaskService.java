@@ -38,7 +38,6 @@ public class TaskService {
 
     public TaskDto createTask(TaskDto taskDto) {
         log.info("Create new task with id: {}", taskDto.getId());
-        validation(taskDto);
 
         if (taskDto.getDeadlineDate() != null &&
                 taskDto.getDeadlineDate().isBefore(LocalDate.now())) {
@@ -61,7 +60,6 @@ public class TaskService {
 
     public TaskDto updateTask(Long id, TaskDto taskDto) {
         log.info("Update task with id: {}", taskDto.getId());
-        validation(taskDto);
         TaskEntity fetchedEntity = fetchEntityById(id);
 
         if (fetchedEntity.getStatus() == TaskStatus.DONE) {
@@ -162,23 +160,6 @@ public class TaskService {
                     log.warn("Task with id {} not found in database", id);
                     return new EntityNotFoundException("Not found task by id = " + id);
                 });
-    }
-
-    private void validation(TaskDto taskDto) {
-        log.debug("Validate task DTO with id: {}", taskDto.getId());
-        if (taskDto.getId() != null) {
-            throw new IllegalArgumentException("Task id must be empty");
-        }
-        if (taskDto.getCreatorId() == null) {
-            throw new IllegalArgumentException("Task creator must exist");
-        }
-        if (taskDto.getStatus() != null) {
-            throw new IllegalArgumentException("Task status must be empty");
-        }
-        if (taskDto.getCreateDateTime() != null) {
-            throw new IllegalArgumentException("Task creation date and time must be empty");
-        }
-        log.debug("Task DTO validation passed, id: {}", taskDto.getId());
     }
 
     private List<TaskEntity> getTasksByStatus(TaskStatus status) {

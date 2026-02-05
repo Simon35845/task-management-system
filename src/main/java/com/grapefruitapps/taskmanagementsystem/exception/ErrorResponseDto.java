@@ -1,4 +1,4 @@
-package com.grapefruitapps.taskmanagementsystem.web;
+package com.grapefruitapps.taskmanagementsystem.exception;
 
 import java.time.LocalDateTime;
 
