@@ -11,7 +11,7 @@ import java.util.List;
 
 @Service
 public class TaskService {
-    public static final int MAX_COUNT_OF_TASKS_IN_PROGRESS = 5;
+    public static final int MAX_COUNT_OF_TASKS_IN_PROGRESS = 4;
     private static final Logger log = LoggerFactory.getLogger(TaskService.class);
 
     private final TaskRepository repository;
@@ -125,17 +125,19 @@ public class TaskService {
         return mapper.toDto(fetchedEntity);
     }
 
-    public TaskDto approveTask(Long id) {
-        log.info("Approve task with id: {}", id);
+    public TaskDto completeTask(Long id) {
+        log.info("Complete task with id: {}", id);
         TaskEntity fetchedEntity = fetchEntityById(id);
 
         if (fetchedEntity.getStatus() != TaskStatus.IN_PROGRESS) {
-            throw new IllegalStateException("Cannot approve task: status = " + fetchedEntity.getStatus());
+            throw new IllegalStateException("Cannot complete task: status = " + fetchedEntity.getStatus());
         }
 
-        repository.setStatus(id, TaskStatus.DONE);
+        LocalDateTime doneDateTime = LocalDateTime.now();
+        repository.setStatusAndDoneDateTime(id, TaskStatus.DONE, doneDateTime);
         fetchedEntity.setStatus(TaskStatus.DONE);
-        log.info("Task approved, id: {}", id);
+        fetchedEntity.setDoneDateTime(doneDateTime);
+        log.info("Task completed, id: {}", id);
         return mapper.toDto(fetchedEntity);
     }
 

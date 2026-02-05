@@ -12,6 +12,7 @@ public class TaskMapper {
                 entity.getStatus(),
                 entity.getCreateDateTime(),
                 entity.getDeadlineDate(),
+                entity.getDoneDateTime(),
                 entity.getPriority()
         );
     }
@@ -24,6 +25,7 @@ public class TaskMapper {
                 dto.getStatus(),
                 dto.getCreateDateTime(),
                 dto.getDeadlineDate(),
+                dto.getDoneDateTime(),
                 dto.getPriority()
         );
     }

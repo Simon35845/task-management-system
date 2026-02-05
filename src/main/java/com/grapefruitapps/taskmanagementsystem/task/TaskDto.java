@@ -20,13 +20,15 @@ public class TaskDto {
     private LocalDateTime createDateTime;
     @FutureOrPresent
     private LocalDate deadlineDate;
+    @Null
+    private LocalDateTime doneDateTime;
     private TaskPriority priority;
     public TaskDto(Long id,
                    Long creatorId,
                    Long assignedUserId,
                    TaskStatus status,
                    LocalDateTime createDateTime,
-                   LocalDate deadlineDate,
+                   LocalDate deadlineDate, LocalDateTime doneDateTime,
                    TaskPriority priority) {
         this.id = id;
         this.creatorId = creatorId;
@@ -34,6 +36,7 @@ public class TaskDto {
         this.status = status;
         this.createDateTime = createDateTime;
         this.deadlineDate = deadlineDate;
+        this.doneDateTime = doneDateTime;
         this.priority = priority;
     }
 
@@ -124,5 +127,13 @@ public class TaskDto {
                 ", deadlineDate=" + deadlineDate +
                 ", priority=" + priority +
                 '}';
+    }
+
+    public LocalDateTime getDoneDateTime() {
+        return doneDateTime;
+    }
+
+    public void setDoneDateTime(LocalDateTime doneDateTime) {
+        this.doneDateTime = doneDateTime;
     }
 }

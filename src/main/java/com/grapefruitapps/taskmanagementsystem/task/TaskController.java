@@ -74,13 +74,13 @@ public class TaskController {
         return ResponseEntity.ok(startedTask);
     }
 
-    @PatchMapping("/{id}/approve")
-    public ResponseEntity<TaskDto> approveTask(
+    @PatchMapping("/{id}/complete")
+    public ResponseEntity<TaskDto> completeTask(
             @PathVariable Long id
     ){
-        log.info("Called approveTask: id={}", id);
-        TaskDto approvedTask = taskService.approveTask(id);
-        return ResponseEntity.ok(approvedTask);
+        log.info("Called completeTask: id={}", id);
+        TaskDto completedTask = taskService.completeTask(id);
+        return ResponseEntity.ok(completedTask);
     }
 
     @PatchMapping("/{id}/resume")
