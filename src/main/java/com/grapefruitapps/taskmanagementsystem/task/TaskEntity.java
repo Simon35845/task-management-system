@@ -1,6 +1,7 @@
 package com.grapefruitapps.taskmanagementsystem.task;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Null;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,6 +29,9 @@ public class TaskEntity {
     @Column(name = "deadline_date")
     private LocalDate deadlineDate;
 
+    @Column(name = "done_date_time")
+    private LocalDateTime doneDateTime;
+
     @Column(name = "priority", nullable = false)
     @Enumerated(EnumType.STRING)
     private TaskPriority priority;
@@ -37,13 +41,14 @@ public class TaskEntity {
 
     public TaskEntity(Long id, Long creatorId, Long assignedUserId,
                       TaskStatus status, LocalDateTime createDateTime,
-                      LocalDate deadlineDate, TaskPriority priority) {
+                      LocalDate deadlineDate, LocalDateTime doneDateTime, TaskPriority priority) {
         this.id = id;
         this.creatorId = creatorId;
         this.assignedUserId = assignedUserId;
         this.status = status;
         this.createDateTime = createDateTime;
         this.deadlineDate = deadlineDate;
+        this.doneDateTime = doneDateTime;
         this.priority = priority;
     }
 
@@ -101,5 +106,13 @@ public class TaskEntity {
 
     public void setPriority(TaskPriority priority) {
         this.priority = priority;
+    }
+
+    public LocalDateTime getDoneDateTime() {
+        return doneDateTime;
+    }
+
+    public void setDoneDateTime(LocalDateTime doneDateTime) {
+        this.doneDateTime = doneDateTime;
     }
 }
