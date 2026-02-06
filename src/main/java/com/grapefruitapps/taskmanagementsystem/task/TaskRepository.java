@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Repository
 public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
@@ -31,5 +30,5 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
             @Param("status") TaskStatus status,
             @Param("doneDateTime") LocalDateTime doneDateTime);
 
-    List<TaskEntity> findByStatus(TaskStatus status);
+    long countByStatus(TaskStatus status);
 }

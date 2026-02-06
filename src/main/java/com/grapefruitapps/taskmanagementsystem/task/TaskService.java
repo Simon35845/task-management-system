@@ -11,7 +11,7 @@ import java.util.List;
 
 @Service
 public class TaskService {
-    public static final int MAX_COUNT_OF_TASKS_IN_PROGRESS = 4;
+    public static final int MAX_COUNT_OF_TASKS_IN_PROGRESS = 5;
     private static final Logger log = LoggerFactory.getLogger(TaskService.class);
 
     private final TaskRepository repository;
@@ -114,7 +114,7 @@ public class TaskService {
             throw new IllegalStateException("Task must have an executor");
         }
 
-        if (getTasksByStatus(TaskStatus.IN_PROGRESS).size() > MAX_COUNT_OF_TASKS_IN_PROGRESS) {
+        if (repository.countByStatus(TaskStatus.IN_PROGRESS) > MAX_COUNT_OF_TASKS_IN_PROGRESS) {
             throw new IllegalStateException("Count of tasks with status = " + fetchedEntity.getStatus()
                     + " must be less than " + MAX_COUNT_OF_TASKS_IN_PROGRESS);
         }
@@ -162,10 +162,5 @@ public class TaskService {
                     log.warn("Task with id {} not found in database", id);
                     return new EntityNotFoundException("Not found task by id = " + id);
                 });
-    }
-
-    private List<TaskEntity> getTasksByStatus(TaskStatus status) {
-        log.debug("Get tasks with status: {}", status);
-        return repository.findByStatus(status);
     }
 }
