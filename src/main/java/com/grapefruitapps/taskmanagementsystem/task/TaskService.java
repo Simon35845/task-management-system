@@ -3,6 +3,7 @@ package com.grapefruitapps.taskmanagementsystem.task;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -12,8 +13,10 @@ import java.util.List;
 @Service
 public class TaskService {
     public static final int MAX_COUNT_OF_TASKS_IN_PROGRESS = 5;
-    private static final Logger log = LoggerFactory.getLogger(TaskService.class);
+    public static final int DEFAULT_PAGE_SIZE = 10;
+    public static final int DEFAULT_PAGE_NUMBER = 0;
 
+    private static final Logger log = LoggerFactory.getLogger(TaskService.class);
     private final TaskRepository repository;
     private final TaskMapper mapper;
 
@@ -22,9 +25,19 @@ public class TaskService {
         this.mapper = mapper;
     }
 
-    public List<TaskDto> getAllTasks() {
-        log.debug("Get all tasks");
-        List<TaskEntity> taskEntities = repository.findAll();
+    public List<TaskDto> searchAllByFilter(TaskFilter filter) {
+        log.debug("Get all tasks by filter");
+        int pageSize = filter.pageSize() != null ? filter.pageSize() : DEFAULT_PAGE_SIZE;
+        int pageNumber = filter.pageNumber() != null ? filter.pageNumber() : DEFAULT_PAGE_NUMBER;
+        Pageable pageable = Pageable.ofSize(pageSize).withPage(pageNumber);
+
+        List<TaskEntity> taskEntities = repository.searchAllByFilter(
+                filter.creatorId(),
+                filter.assignedUserId(),
+                filter.status(),
+                filter.priority(),
+                pageable
+        );
         log.debug("Found {} tasks ", taskEntities.size());
         return taskEntities.stream().map(mapper::toDto).toList();
     }

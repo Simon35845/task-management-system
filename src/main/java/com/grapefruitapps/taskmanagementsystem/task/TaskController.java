@@ -20,11 +20,26 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    //TODO сделать пагинацию и фильтрацию списка задач
+
     @GetMapping()
-    public ResponseEntity<List<TaskDto>> getAllTasks() {
+    public ResponseEntity<List<TaskDto>> getAllTasks(
+            @RequestParam(name = "creatorId", required = false) Long creatorId,
+            @RequestParam(name = "assignedUserId", required = false) Long assignedUserId,
+            @RequestParam(name = "status", required = false) TaskStatus status,
+            @RequestParam(name = "priority", required = false) TaskPriority priority,
+            @RequestParam(name = "pageSize", required = false) Integer pageSize,
+            @RequestParam(name = "pageNumber", required = false) Integer pageNumber
+    ) {
+        TaskFilter filter = new TaskFilter(
+                creatorId,
+                assignedUserId,
+                status,
+                priority,
+                pageSize,
+                pageNumber
+        );
         log.info("Called getAllTasks");
-        return ResponseEntity.ok(taskService.getAllTasks());
+        return ResponseEntity.ok(taskService.searchAllByFilter(filter));
     }
 
     @GetMapping("/{id}")
